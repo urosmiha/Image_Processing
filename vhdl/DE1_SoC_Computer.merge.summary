@@ -1,0 +1,17 @@
+Partition Merge Status : Successful - Tue Feb 20 17:11:51 2018
+Quartus Prime Version : 16.1.0 Build 196 10/24/2016 SJ Standard Edition
+Revision Name : DE1_SoC_Computer
+Top-level Entity Name : DE1_SoC_Computer
+Family : Cyclone V
+Logic utilization (in ALMs) : N/A
+Total registers : 4681
+Total pins : 368
+Total virtual pins : 0
+Total block memory bits : 2,184,960
+Total DSP Blocks : 6
+Total HSSI RX PCSs : 0
+Total HSSI PMA RX Deserializers : 0
+Total HSSI TX PCSs : 0
+Total HSSI PMA TX Serializers : 0
+Total PLLs : 3
+Total DLLs : 1

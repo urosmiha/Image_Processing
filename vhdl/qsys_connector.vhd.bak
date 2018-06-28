@@ -1,0 +1,72 @@
+LIBRARY ieee;
+USE ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+-- *** CURRENTLY, THIS IS ONLY CONNECTING THE SOBEL FILTER FOR TESTING PURPOSES. REMAINING SIGNALS AND COMPONENTS HAVE BEEN LEFT FOR LATER ***
+
+-- Top level enitity to connect Sobel and Gaussian filters (3 filter blocks)
+-- One kernel selector, which holds all supported kernels
+-- Sobel math block for the two Sobel filter blocks (x and y)
+
+entity noise_filter is
+	port (
+		clk		  	: in std_logic;
+				reset		  	: in std_logic;
+
+		kernel_sel 	: in std_logic_vector(7 downto 0);
+		control_in 	: in std_logic_vector(7 downto 0);
+		filter_inputs1 : in std_logic_vector(31 downto 0);
+		filter_inputs2 : in std_logic_vector(31 downto 0);
+		filter_inputs3 : in std_logic_vector(31 downto 0);
+		img_window 	: in signed(72 downto 1);
+		pixel_out  	: out unsigned(7 downto 0);
+		control_out	: out std_logic_vector(7 downto 0)
+	);
+end entity;
+
+-- Components
+architecture structure of noise_filter is
+	component filter
+		port (
+			clk			: in std_logic;
+			filter_en	: in std_logic_vector(7 downto 0);
+			kernel		: in signed(36 downto 1);
+			denominator	: in signed(5 downto 0);
+			window		: in signed(72 downto 1);
+			filter_done	: out std_logic_vector(7 downto 0);
+			avg_out		: out unsigned(8 downto 1)
+		);
+	end component;
+
+	component kernel_select
+		port (
+			clk		: in std_logic;
+			kernel	: out signed(36 downto 1);
+			sel		: in std_logic_vector(2 downto 0);
+			denom	: out signed(5 downto 0)
+		);
+	end component;
+
+	signal s_denom : signed(5 downto 0);
+	signal s_kernel  : signed(35 downto 0);
+	
+begin
+	kernel_selector: kernel_select port map (
+		clk		=> clk,
+		kernel	=> s_kernel,
+		sel		=> kernel_sel(2 downto 0),
+		denom	=> s_denom
+	);
+
+	noise: filter port map (
+		clk			 => clk,
+		kernel		 => s_kernel,
+		filter_en	 => control_in,
+		denominator	 => s_denom,
+		window		 => img_window,
+		avg_out		 => pixel_out--,
+	--	filter_done  => control_out
+	);
+
+	control_out<="00000001";
+end architecture;

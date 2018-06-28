@@ -1,0 +1,73 @@
+LIBRARY ieee;
+USE ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+ENTITY reg32_avalon_interface IS
+PORT ( clock, resetn : IN STD_LOGIC;
+	read, write, chipselect : IN STD_LOGIC;
+	writedata : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+	address   : IN std_logic_vector(7 downto 0);
+	byteenable : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
+	readdata : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
+	Q_export : OUT STD_LOGIC_VECTOR(31 DOWNTO 0) );
+END reg32_avalon_interface;
+
+
+ARCHITECTURE Structure OF reg32_avalon_interface IS
+	
+	
+	component noise_filter is
+	port (
+		clk		  	: in std_logic;
+		kernel_sel 	: in std_logic_vector(7 downto 0);
+		control_in 	: in std_logic_vector(7 downto 0);
+		filter_inputs1 : in std_logic_vector(31 downto 0);
+		filter_inputs2 : in std_logic_vector(31 downto 0);
+		filter_inputs3 : in std_logic_vector(31 downto 0);
+		pixel_out  	: out unsigned(7 downto 0);
+		control_out	: out std_logic_vector(7 downto 0)
+	);
+	end component;
+	
+	signal control_in_signal 	:  std_logic_vector(7 downto 0);
+	signal filter_inputs1_signal :  std_logic_vector(31 downto 0);
+	signal filter_inputs2_signal :  std_logic_vector(31 downto 0);
+	signal filter_inputs3_signal :  std_logic_vector(31 downto 0);
+	signal img_window_signal 	: signed(72 downto 1);
+	signal pixel_out_signal  	:  unsigned(7 downto 0);
+	signal control_out_signal	:  std_logic_vector(7 downto 0);
+	signal	kernel_sel_signal 	:  std_logic_vector(7 downto 0);
+
+	BEGIN
+	
+	filter: noise_filter port map (
+		clk			    => clock,
+		control_in	    => control_in_signal,
+		filter_inputs1	 => filter_inputs1_signal,
+		filter_inputs2	 => filter_inputs2_signal,
+		filter_inputs3	 => filter_inputs3_signal,
+		kernel_sel      => kernel_sel_signal,
+		pixel_out       => pixel_out_signal,
+		control_out		 => control_out_signal
+	);
+	
+	process(clock)
+	begin
+		if(write = '1')then
+			case address is 
+				when x"0420" => filter_inputs1_signal <= writedata;
+				when x"0440" => filter_inputs2_signal <= writedata;
+				when x"0460" => filter_inputs3_signal <= writedata;
+				when x"0500" => kernel_sel_signal <= writedata;
+			end case;
+			
+		elsif(read = '1')then 
+			case address is
+				when x"0480" => readdata <= control_out_signal; 
+				when x"04a0" => readdata <= std_logic_vector(pixel_out_signal);
+			end case; 
+		end if; 
+	end process;
+
+		
+END Structure;

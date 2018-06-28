@@ -1,0 +1,160 @@
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+entity filter is
+port (
+	clk			: in std_logic;
+	filter_en	: in std_logic_vector(7 downto 0);
+	kernel		: in signed(36 downto 1);
+	denominator	: in signed(5 downto 0);
+	window		: in signed(72 downto 1);
+	filter_done	: out std_logic_vector(7 downto 0);
+	avg_out		: out unsigned(8 downto 1)
+);
+end entity;
+
+architecture beh of filter is
+
+	TYPE State_type IS (S1, S2);  -- Define the states
+	SIGNAL state : State_Type := S1;    -- Create a signal that uses 
+
+	signal lower_limit : signed(17 downto 0) := (others => '0');		-- 0
+	signal upper_limit : signed(17 downto 0) := "000000000011111111";	-- 255
+	
+	signal one : signed(11 downto 0) := "111111111111";
+	signal two : signed(11 downto 0) := "011111111111";
+	signal tmp : signed(23 downto 0) := (others => '0');
+	signal s_done : std_logic_vector(7 downto 0) := (others => '0');
+	
+	signal s_window : signed(72 downto 1) := (others => '0');
+	
+	signal test : std_logic_vector(1 downto 0) := "10";
+	
+	signal s_avg : signed(17 downto 0) := (others => '0');	
+	
+begin
+
+	process(clk)
+	begin
+		if(rising_edge(clk)) then
+		
+			case state is
+				when S1 =>
+					if(filter_en = X"01") then
+						state <= S2;
+					end if;
+					
+				when S2 => 
+					state <= S1;
+					
+				when others =>
+					state <= s1;
+			end case;
+		end if;
+	end process;
+
+
+	process(state)
+		--variable s_factor : signed(17 downto 0); 
+
+		variable m1 : signed(17 downto 0) := (others => '0');
+		variable m2 : signed(17 downto 0) := (others => '0');
+		variable m3 : signed(17 downto 0) := (others => '0');
+		variable m4 : signed(17 downto 0) := (others => '0');
+		variable m5 : signed(17 downto 0) := (others => '0');
+		variable m6 : signed(17 downto 0) := (others => '0');
+		variable m7 : signed(17 downto 0) := (others => '0');
+		variable m8 : signed(17 downto 0) := (others => '0');
+		variable m9 : signed(17 downto 0) := (others => '0');
+		
+		
+		variable w1 : signed(8 downto 0);
+		variable w2 : signed(8 downto 0);
+		variable w3 : signed(8 downto 0);
+		variable w4 : signed(8 downto 0);
+		variable w5 : signed(8 downto 0);
+		variable w6 : signed(8 downto 0);
+		variable w7 : signed(8 downto 0);
+		variable w8 : signed(8 downto 0);
+		variable w9 : signed(8 downto 0);
+		
+		variable k1 : signed(8 downto 0);
+		variable k2 : signed(8 downto 0);
+		variable k3 : signed(8 downto 0);
+		variable k4 : signed(8 downto 0);
+		variable k5 : signed(8 downto 0);
+		variable k6 : signed(8 downto 0);
+		variable k7 : signed(8 downto 0);
+		variable k8 : signed(8 downto 0);
+		variable k9 : signed(8 downto 0);
+		
+		variable sum : signed(17 downto 0) := (others => '0');
+		variable avg : signed(17 downto 0) := (others => '0');	
+
+	begin
+		case state is
+			when S1 =>
+				
+			
+			when S2 =>
+				w1 := '0' & window(72 downto 65);
+				w2 := '0' & window(64 downto 57);
+				w3 := '0' & window(56 downto 49);
+				w4 := '0' & window(48 downto 41);
+				w5 := '0' & window(40 downto 33);
+				w6 := '0' & window(32 downto 25);
+				w7 := '0' & window(24 downto 17);
+				w8 := '0' & window(16 downto 9);
+				w9 := '0' & window(8 downto 1);
+				
+				k1 := kernel(36) & kernel(36) & kernel(36) & kernel(36) & kernel(36) & kernel(36 downto 33);
+				k2 := kernel(32) & kernel(32) & kernel(32) & kernel(32) & kernel(32) & kernel(32 downto 29);
+				k3 := kernel(28) & kernel(28) & kernel(28) & kernel(28) & kernel(28) & kernel(28 downto 25);
+				k4 := kernel(24) & kernel(24) & kernel(24) & kernel(24) & kernel(24) & kernel(24 downto 21);
+				k5 := kernel(20) & kernel(20) & kernel(20) & kernel(20) & kernel(20) & kernel(20 downto 17);
+				k6 := kernel(16) & kernel(16) & kernel(16) & kernel(16) & kernel(16) & kernel(16 downto 13);
+				k7 := kernel(12) & kernel(12) & kernel(12) & kernel(12) & kernel(12) & kernel(12 downto 9);
+				k8 := kernel(8) & kernel(8) & kernel(8) & kernel(8) & kernel(8) & kernel(8 downto 5);
+				k9 := kernel(4) & kernel(4) & kernel(4) & kernel(4) & kernel(4) & kernel(4 downto 1);
+				
+				m1 := k1 * w1;
+				m2 := k2 * w2;
+				m3 := k3 * w3;
+				m4 := k4 * w4;
+				m5 := k5 * w5;
+				m6 := k6 * w6;
+				m7 := k7 * w7;
+				m8 := k8 * w8;
+				m9 := k9 * w9;
+			
+				sum := m1 + m2 + m3 + m4 + m5 + m6 + m7 + m8 + m9;
+
+				avg := abs(sum / denominator);
+				
+				--s_avg <= avg;
+				
+				if(avg > upper_limit) then
+					avg := upper_limit;
+				end if;
+				
+				--s_avg <= avg;
+				
+				-- if(avg < lower_limit) then
+					-- avg := lower_limit;
+				-- elsif(avg > upper_limit) then
+					-- avg := upper_limit;
+				-- end if;
+				
+				avg_out <= unsigned(avg(7 downto 0));
+				
+				s_done <= "00000010";
+
+			when others =>
+		
+		end case;
+
+		filter_done <= s_done;
+		
+	end process;
+end architecture;
